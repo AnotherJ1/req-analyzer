@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Anything Analyzer</title>
+    <link rel="stylesheet" href="panel.css">
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div class="brand">
+          <strong>Anything Analyzer</strong>
+          <span id="targetLabel">Current tab</span>
+        </div>
+        <div class="toolbar">
+          <button id="startBtn" class="primary">Start</button>
+          <button id="pauseBtn">Pause</button>
+          <button id="stopBtn" class="danger">Stop</button>
+          <button id="reloadBtn" title="Reload inspected tab">Reload</button>
+          <button id="snapshotBtn" title="Capture cookies and storage">Snapshot</button>
+          <button id="clearBtn" title="Clear current session">Clear</button>
+          <select id="exportFormat" title="Export format">
+            <option value="session">Session JSON</option>
+            <option value="har">HAR</option>
+            <option value="requests">Requests JSON</option>
+            <option value="hooks">Hooks JSON</option>
+            <option value="storage">Storage JSON</option>
+            <option value="analysis">Analysis MD</option>
+          </select>
+          <button id="exportBtn" title="Export captured session">Export</button>
+          <button id="settingsBtn" title="AI settings">Settings</button>
+        </div>
+      </header>
+
+      <section class="summary" aria-label="Session summary">
+        <div>
+          <span class="metric" id="requestCount">0</span>
+          <span>Requests</span>
+        </div>
+        <div>
+          <span class="metric" id="hookCount">0</span>
+          <span>Hooks</span>
+        </div>
+        <div>
+          <span class="metric" id="storageCount">0</span>
+          <span>Snapshots</span>
+        </div>
+        <div>
+          <span class="metric" id="errorCount">0</span>
+          <span>Errors</span>
+        </div>
+      </section>
+
+      <section class="controlStrip" aria-label="Capture controls">
+        <label><input id="captureNetworkInput" type="checkbox" checked> Network</label>
+        <label><input id="captureHooksInput" type="checkbox" checked> JS hooks</label>
+        <label><input id="captureStorageInput" type="checkbox" checked> Storage snapshots</label>
+        <label><input id="captureCookiesInput" type="checkbox" checked> Cookie API snapshot</label>
+        <label>
+          Status
+          <select id="statusFilter">
+            <option value="">All</option>
+            <option value="2xx">2xx</option>
+            <option value="3xx">3xx</option>
+            <option value="4xx">4xx</option>
+            <option value="5xx">5xx</option>
+            <option value="error">Errors</option>
+          </select>
+        </label>
+      </section>
+
+      <nav class="tabs" aria-label="Views">
+        <button class="tab active" data-view="requests">Requests</button>
+        <button class="tab" data-view="hooks">Hooks</button>
+        <button class="tab" data-view="storage">Storage</button>
+        <button class="tab" data-view="analysis">Analysis</button>
+      </nav>
+
+      <section class="filters">
+        <input id="searchInput" type="search" placeholder="Filter by URL, method, status, hook kind, storage key">
+        <select id="domainFilter" title="Domain filter">
+          <option value="">All domains</option>
+        </select>
+      </section>
+
+      <section id="requestsView" class="view active">
+        <div class="split">
+          <div class="tableWrap">
+            <table>
+              <thead>
+                <tr>
+                  <th class="seq">#</th>
+                  <th class="method">Method</th>
+                  <th class="status">Status</th>
+                  <th>URL</th>
+                  <th class="size">Size</th>
+                  <th class="time">Time</th>
+                </tr>
+              </thead>
+              <tbody id="requestsTable"></tbody>
+            </table>
+          </div>
+          <aside class="detail" id="requestDetail">
+            <div class="empty">Select a request</div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="hooksView" class="view">
+        <div class="eventList" id="hooksList"></div>
+      </section>
+
+      <section id="storageView" class="view">
+        <div class="eventList" id="storageList"></div>
+      </section>
+
+      <section id="analysisView" class="view">
+        <div class="analysisControls">
+          <select id="analysisMode">
+            <option value="auto">Auto detect</option>
+            <option value="api">API reverse engineering</option>
+            <option value="security">Security audit</option>
+            <option value="performance">Performance</option>
+            <option value="crypto">JS crypto analysis</option>
+          </select>
+          <select id="analysisScope">
+            <option value="all">All captured data</option>
+            <option value="filtered">Filtered data</option>
+            <option value="selected">Selected request</option>
+          </select>
+          <button id="analyzeBtn" class="primary">Analyze</button>
+          <button id="copyAnalysisBtn">Copy</button>
+          <button id="clearAnalysisBtn">Clear</button>
+        </div>
+        <pre id="analysisOutput" class="analysisOutput">Configure an OpenAI-compatible endpoint, capture traffic, then run analysis.</pre>
+      </section>
+    </main>
+
+    <dialog id="settingsDialog">
+      <form method="dialog" class="settings">
+        <header>
+          <strong>AI Settings</strong>
+          <button value="cancel" class="iconBtn" title="Close">x</button>
+        </header>
+        <label>
+          Base URL
+          <input id="baseUrlInput" placeholder="https://api.openai.com/v1">
+        </label>
+        <label>
+          API key
+          <input id="apiKeyInput" type="password" placeholder="sk-...">
+        </label>
+        <label>
+          Model
+          <input id="modelInput" placeholder="gpt-4.1-mini">
+        </label>
+        <label>
+          Max captured body chars per request
+          <input id="bodyLimitInput" type="number" min="512" max="20000" step="512">
+        </label>
+        <footer>
+          <button id="saveSettingsBtn" value="default" class="primary">Save</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <script src="panel.js"></script>
+  </body>
+</html>

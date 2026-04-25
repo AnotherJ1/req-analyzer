@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Anything Analyzer</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main>
+      <header>
+        <strong>Anything Analyzer</strong>
+        <span>Browser plugin controls</span>
+      </header>
+
+      <section>
+        <h1>Run Capture</h1>
+        <ol>
+          <li>Open the page you want to analyze.</li>
+          <li>Open DevTools.</li>
+          <li>Select the <b>Analyzer</b> panel.</li>
+          <li>Click <b>Start</b>.</li>
+        </ol>
+      </section>
+
+      <section>
+        <h1>AI Settings</h1>
+        <label>
+          Base URL
+          <input id="baseUrlInput" placeholder="https://api.openai.com/v1">
+        </label>
+        <label>
+          API key
+          <input id="apiKeyInput" type="password" placeholder="sk-...">
+        </label>
+        <label>
+          Model
+          <input id="modelInput" placeholder="gpt-4.1-mini">
+        </label>
+        <label>
+          Body chars
+          <input id="bodyLimitInput" type="number" min="512" max="20000" step="512">
+        </label>
+        <button id="saveBtn">Save Settings</button>
+        <p id="statusText"></p>
+      </section>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

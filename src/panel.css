@@ -1,0 +1,420 @@
+:root {
+  color-scheme: dark;
+  --bg: #101214;
+  --panel: #171a1d;
+  --panel-2: #1f2428;
+  --border: #30363d;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --accent: #3fb950;
+  --accent-2: #58a6ff;
+  --danger: #ff7b72;
+  --warn: #d29922;
+  --font: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 760px;
+  min-height: 520px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button,
+select,
+input {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+button {
+  height: 30px;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: var(--accent-2);
+}
+
+button.primary {
+  border-color: #2f8f46;
+  background: #238636;
+  color: white;
+}
+
+button.danger {
+  border-color: #a43b35;
+  background: #5f1f1b;
+}
+
+input,
+select {
+  height: 32px;
+  padding: 0 10px;
+}
+
+.app {
+  display: grid;
+  grid-template-rows: auto auto auto auto auto 1fr;
+  height: 100vh;
+}
+
+.topbar,
+.filters,
+.controlStrip,
+.analysisControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.topbar {
+  justify-content: space-between;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+}
+
+.brand span,
+.summary span:last-child {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.toolbar {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.toolbar select {
+  width: 140px;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(100px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.summary > div {
+  padding: 10px 12px;
+  background: var(--panel);
+}
+
+.controlStrip {
+  flex-wrap: wrap;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.controlStrip label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  color: var(--muted);
+}
+
+.controlStrip input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  padding: 0;
+  accent-color: var(--accent);
+}
+
+.metric {
+  display: block;
+  font-family: var(--mono);
+  font-size: 20px;
+  color: var(--accent);
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 12px 0;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-color: transparent;
+}
+
+.tab.active {
+  background: var(--bg);
+  border-color: var(--border);
+  border-bottom-color: var(--bg);
+}
+
+.filters input {
+  flex: 1;
+}
+
+.filters select {
+  width: 220px;
+}
+
+.view {
+  display: none;
+  min-height: 0;
+}
+
+.view.active {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(420px, 1fr) minmax(300px, 42%);
+  height: 100%;
+  min-height: 0;
+}
+
+.tableWrap,
+.eventList,
+.detail,
+.analysisOutput {
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--border);
+  padding: 7px 8px;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--panel);
+  color: var(--muted);
+  font-weight: 600;
+}
+
+tbody tr {
+  cursor: pointer;
+}
+
+tbody tr:hover,
+tbody tr.selected {
+  background: #1d2a35;
+}
+
+.seq {
+  width: 52px;
+}
+
+.method {
+  width: 78px;
+}
+
+.status,
+.size,
+.time {
+  width: 80px;
+}
+
+.status.ok {
+  color: var(--accent);
+}
+
+.status.warn {
+  color: var(--warn);
+}
+
+.status.error {
+  color: var(--danger);
+}
+
+.detail {
+  border-left: 1px solid var(--border);
+  background: var(--panel);
+  padding: 12px;
+}
+
+.empty {
+  color: var(--muted);
+  padding: 24px;
+  text-align: center;
+}
+
+.detail h3,
+.event h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.detailActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 12px;
+}
+
+.kv {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 6px 10px;
+  margin: 10px 0;
+}
+
+.kv dt {
+  color: var(--muted);
+}
+
+.kv dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+pre {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.codeBlock {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #0b0d0f;
+}
+
+.eventList {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+}
+
+.event {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 10px;
+}
+
+.eventMeta {
+  display: flex;
+  gap: 8px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: #26303a;
+  color: var(--text);
+}
+
+.analysisControls {
+  justify-content: flex-start;
+}
+
+.analysisControls select {
+  width: 240px;
+}
+
+.analysisControls button {
+  min-width: 72px;
+}
+
+.analysisOutput {
+  height: calc(100vh - 244px);
+  padding: 14px;
+  background: #0b0d0f;
+}
+
+dialog {
+  width: min(560px, calc(100vw - 40px));
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  padding: 0;
+}
+
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.settings {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.settings header,
+.settings footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.settings label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+}
+
+.settings input {
+  width: 100%;
+}
+
+.iconBtn {
+  width: 30px;
+  padding: 0;
+}
