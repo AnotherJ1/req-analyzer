@@ -67,12 +67,12 @@ async function sendDebugger(tabId, method, params = {}) {
   return chrome.debugger.sendCommand(debuggee(tabId), method, params);
 }
 
-async function startCapture(tabId, options = {}) {
+async function startCapture(tabId, options = {}, attachDebugger = true) {
   const capture = getCapture(tabId);
   capture.options = { ...capture.options, ...options };
   capture.status = "running";
 
-  if (!capture.attached) {
+  if (attachDebugger && !capture.attached) {
     await chrome.debugger.attach(debuggee(tabId), "1.3");
     capture.attached = true;
     await sendDebugger(tabId, "Network.enable", {
@@ -83,12 +83,14 @@ async function startCapture(tabId, options = {}) {
   }
 
   postToUis(tabId, { type: "capture:status", status: capture.status });
+  return capture.status;
 }
 
 async function pauseCapture(tabId) {
   const capture = getCapture(tabId);
   if (capture.status !== "stopped") capture.status = "paused";
   postToUis(tabId, { type: "capture:status", status: capture.status });
+  return capture.status;
 }
 
 async function stopCapture(tabId) {
@@ -102,6 +104,14 @@ async function stopCapture(tabId) {
   }
 
   postToUis(tabId, { type: "capture:status", status: capture.status });
+  return capture.status;
+}
+
+async function clearCapture(tabId) {
+  const capture = getCapture(tabId);
+  capture.requests.clear();
+  capture.sequence = 0;
+  postToUis(tabId, { type: "capture:cleared" });
 }
 
 async function activeTabId() {
@@ -297,20 +307,26 @@ chrome.runtime.onConnect.addListener((port) => {
       }
 
       if (message?.type === "capture:start") {
-        await startCapture(message.tabId, message.options);
-        port.postMessage({ type: "capture:started", requestId: message.requestId });
+        const status = await startCapture(message.tabId, message.options, message.attachDebugger !== false);
+        port.postMessage({ type: "capture:started", requestId: message.requestId, status });
         return;
       }
 
       if (message?.type === "capture:pause") {
-        await pauseCapture(message.tabId);
-        port.postMessage({ type: "capture:paused", requestId: message.requestId });
+        const status = await pauseCapture(message.tabId);
+        port.postMessage({ type: "capture:paused", requestId: message.requestId, status });
         return;
       }
 
       if (message?.type === "capture:stop") {
-        await stopCapture(message.tabId);
-        port.postMessage({ type: "capture:stopped", requestId: message.requestId });
+        const status = await stopCapture(message.tabId);
+        port.postMessage({ type: "capture:stopped", requestId: message.requestId, status });
+        return;
+      }
+
+      if (message?.type === "capture:clear") {
+        await clearCapture(message.tabId);
+        port.postMessage({ type: "capture:cleared", requestId: message.requestId });
         return;
       }
 

@@ -6,6 +6,8 @@ const i18n = {
     stop: "停止",
     reload: "刷新",
     clear: "清空",
+    exportData: "导出数据",
+    importData: "导入数据",
     network: "网络",
     hooks: "JS Hook",
     storage: "存储快照",
@@ -60,6 +62,8 @@ const i18n = {
     selected: "已选择",
     copied: "已复制。",
     saved: "已保存。",
+    imported: "数据已导入。",
+    importFailed: "导入失败：{message}",
     analyzing: "正在分析...",
     needAi: "请先在设置里填写 API Key。",
     needData: "请先捕获一些数据。",
@@ -81,6 +85,8 @@ const i18n = {
     stop: "Stop",
     reload: "Reload",
     clear: "Clear",
+    exportData: "Export Data",
+    importData: "Import Data",
     network: "Network",
     hooks: "JS Hooks",
     storage: "Storage",
@@ -135,6 +141,8 @@ const i18n = {
     selected: "Selected",
     copied: "Copied.",
     saved: "Saved.",
+    imported: "Data imported.",
+    importFailed: "Import failed: {message}",
     analyzing: "Analyzing...",
     needAi: "Add an API key in Settings first.",
     needData: "Capture some data first.",
@@ -176,6 +184,8 @@ const state = {
 const port = chrome.runtime.connect({ name: "analyzer-sidepanel" });
 const pending = new Map();
 let requestSeq = 0;
+let controlBusy = false;
+const AI_ANALYSIS_TIMEOUT_MS = 10 * 60 * 1000;
 
 const $ = (id) => document.getElementById(id);
 const el = {
@@ -186,6 +196,9 @@ const el = {
   stopBtn: $("stopBtn"),
   reloadBtn: $("reloadBtn"),
   clearBtn: $("clearBtn"),
+  exportDataBtn: $("exportDataBtn"),
+  importDataBtn: $("importDataBtn"),
+  importDataInput: $("importDataInput"),
   captureNetworkInput: $("captureNetworkInput"),
   captureHooksInput: $("captureHooksInput"),
   captureStorageInput: $("captureStorageInput"),
@@ -263,8 +276,13 @@ port.onMessage.addListener((message) => {
   if (message?.requestId && pending.has(message.requestId)) {
     const waiter = pending.get(message.requestId);
     pending.delete(message.requestId);
-    if (message.type === "error") waiter.reject(new Error(message.error));
-    else waiter.resolve(message);
+    if (message.type === "error") {
+      waiter.reject(new Error(message.error));
+    } else {
+      if (message.status) state.status = message.status;
+      waiter.resolve(message);
+    }
+    render();
     return;
   }
 
@@ -278,6 +296,11 @@ port.onMessage.addListener((message) => {
   if (message?.type === "capture:status") {
     state.status = message.status;
     render();
+    return;
+  }
+
+  if (message?.type === "capture:cleared") {
+    clearLocalSession();
     return;
   }
 
@@ -368,9 +391,10 @@ function render() {
   el.requestCount.textContent = state.requests.length;
   el.hookCount.textContent = state.hooks.length;
   el.storageCount.textContent = state.snapshots.length;
-  el.startBtn.disabled = state.status === "running";
-  el.pauseBtn.disabled = state.status !== "running";
-  el.stopBtn.disabled = state.status === "stopped";
+  el.startBtn.disabled = controlBusy || !state.tabId || state.status === "running";
+  el.pauseBtn.disabled = controlBusy || !state.tabId || state.status !== "running";
+  el.stopBtn.disabled = controlBusy || !state.tabId || state.status === "stopped";
+  el.reloadBtn.disabled = !state.tabId;
   renderRequests();
   renderHooks();
   renderStorage();
@@ -500,6 +524,33 @@ function currentOptions() {
     captureStorage: el.captureStorageInput.checked,
     captureCookies: el.captureCookiesInput.checked
   };
+}
+
+function clearLocalSession() {
+  state.requests = [];
+  state.hooks = [];
+  state.snapshots = [];
+  state.selectedRequestId = null;
+  state.chat = [];
+  render();
+}
+
+async function runCaptureControl(type, payload = {}, optimisticStatus = null) {
+  if (!state.tabId) return;
+  const previousStatus = state.status;
+  if (optimisticStatus) state.status = optimisticStatus;
+  controlBusy = true;
+  render();
+  try {
+    const message = await requestBackground(type, { tabId: state.tabId, ...payload });
+    if (message.status) state.status = message.status;
+  } catch (error) {
+    state.status = previousStatus;
+    el.analysisOutput.textContent = error instanceof Error ? error.message : String(error);
+  } finally {
+    controlBusy = false;
+    render();
+  }
 }
 
 async function loadSettings() {
@@ -728,7 +779,7 @@ async function callOpenAi(content) {
         { role: "user", content }
       ]
     })
-  }, 60000);
+  }, AI_ANALYSIS_TIMEOUT_MS);
   const data = await readJsonResponse(response, "OpenAI-compatible analysis", url);
   return extractOpenAiText(data);
 }
@@ -750,7 +801,7 @@ async function callAnthropic(content) {
       system: "You are a senior browser protocol analyst. Cite request sequence numbers and stay evidence-based.",
       messages: [{ role: "user", content }]
     })
-  }, 60000);
+  }, AI_ANALYSIS_TIMEOUT_MS);
   const data = await readJsonResponse(response, "Claude / Anthropic analysis", url);
   return extractAnthropicText(data);
 }
@@ -807,6 +858,67 @@ function exportText(filename, text, type = "text/plain") {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+function buildSessionExport() {
+  return {
+    app: "anything-analyzer",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    tabId: state.tabId,
+    status: state.status,
+    requests: state.requests,
+    hooks: state.hooks,
+    snapshots: state.snapshots,
+    selectedRequestId: state.selectedRequestId,
+    search: state.search,
+    statusFilter: state.statusFilter,
+    chat: state.chat,
+    analysisOutput: el.analysisOutput.textContent || ""
+  };
+}
+
+function exportCapturedData() {
+  exportText(
+    `anything-analyzer-capture-${Date.now()}.json`,
+    JSON.stringify(buildSessionExport(), null, 2),
+    "application/json"
+  );
+}
+
+function normalizeImportedItems(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function importCapturedData(data) {
+  if (!data || typeof data !== "object") throw new Error("Invalid JSON shape.");
+
+  state.requests = normalizeImportedItems(data.requests).map(normalizeRequest);
+  state.hooks = normalizeImportedItems(data.hooks);
+  state.snapshots = normalizeImportedItems(data.snapshots);
+  state.chat = normalizeImportedItems(data.chat);
+  state.selectedRequestId = data.selectedRequestId || null;
+  state.search = typeof data.search === "string" ? data.search : "";
+  state.statusFilter = typeof data.statusFilter === "string" ? data.statusFilter : "";
+
+  el.searchInput.value = state.search;
+  el.statusFilter.value = state.statusFilter;
+  el.analysisOutput.textContent = typeof data.analysisOutput === "string" ? data.analysisOutput : t("analysisEmpty");
+  render();
+}
+
+async function importCapturedDataFile(file) {
+  if (!file) return;
+  try {
+    importCapturedData(JSON.parse(await file.text()));
+    el.settingsStatus.textContent = t("imported");
+  } catch (error) {
+    el.analysisOutput.textContent = formatMessage(t("importFailed"), {
+      message: error instanceof Error ? error.message : String(error)
+    });
+  } finally {
+    el.importDataInput.value = "";
+  }
+}
+
 function switchView(viewName) {
   document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === viewName));
   document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === `${viewName}View`));
@@ -819,21 +931,19 @@ function bindEvents() {
     applyI18n();
   });
 
-  el.startBtn.addEventListener("click", async () => {
-    if (!state.tabId) return;
-    await requestBackground("capture:start", { tabId: state.tabId, options: currentOptions() });
+  el.startBtn.addEventListener("click", () => runCaptureControl("capture:start", { options: currentOptions() }, "running"));
+  el.pauseBtn.addEventListener("click", () => runCaptureControl("capture:pause", {}, "paused"));
+  el.stopBtn.addEventListener("click", () => runCaptureControl("capture:stop", {}, "stopped"));
+  el.reloadBtn.addEventListener("click", () => {
+    if (state.tabId) chrome.tabs.reload(state.tabId);
   });
-  el.pauseBtn.addEventListener("click", () => requestBackground("capture:pause", { tabId: state.tabId }));
-  el.stopBtn.addEventListener("click", () => requestBackground("capture:stop", { tabId: state.tabId }));
-  el.reloadBtn.addEventListener("click", () => chrome.tabs.reload(state.tabId));
   el.clearBtn.addEventListener("click", () => {
-    state.requests = [];
-    state.hooks = [];
-    state.snapshots = [];
-    state.selectedRequestId = null;
-    state.chat = [];
-    render();
+    clearLocalSession();
+    if (state.tabId) requestBackground("capture:clear", { tabId: state.tabId }).catch(() => {});
   });
+  el.exportDataBtn.addEventListener("click", exportCapturedData);
+  el.importDataBtn.addEventListener("click", () => el.importDataInput.click());
+  el.importDataInput.addEventListener("change", () => importCapturedDataFile(el.importDataInput.files?.[0]));
 
   el.searchInput.addEventListener("input", () => {
     state.search = el.searchInput.value;

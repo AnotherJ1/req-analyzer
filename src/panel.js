@@ -27,6 +27,7 @@ const state = {
 
 const pending = new Map();
 let nextRequestId = 0;
+let controlBusy = false;
 
 const el = {
   targetLabel: document.getElementById("targetLabel"),
@@ -48,6 +49,7 @@ const el = {
   hookCount: document.getElementById("hookCount"),
   storageCount: document.getElementById("storageCount"),
   errorCount: document.getElementById("errorCount"),
+  statusText: document.getElementById("statusText"),
   searchInput: document.getElementById("searchInput"),
   domainFilter: document.getElementById("domainFilter"),
   requestsTable: document.getElementById("requestsTable"),
@@ -85,7 +87,30 @@ port.onMessage.addListener((message) => {
   if (message?.requestId && pending.has(message.requestId)) {
     const waiter = pending.get(message.requestId);
     pending.delete(message.requestId);
-    waiter.resolve(message);
+    if (message.type === "error") {
+      waiter.reject(new Error(message.error));
+    } else {
+      if (message.status) state.captureStatus = message.status;
+      waiter.resolve(message);
+    }
+    render();
+    return;
+  }
+
+  if (message?.type === "background:ready") {
+    state.captureStatus = message.status || "stopped";
+    render();
+    return;
+  }
+
+  if (message?.type === "capture:status") {
+    state.captureStatus = message.status;
+    render();
+    return;
+  }
+
+  if (message?.type === "capture:cleared") {
+    clearLocalSession();
     return;
   }
 
@@ -223,13 +248,14 @@ function render() {
 }
 
 function renderSummary() {
-  el.startBtn.disabled = state.captureStatus === "running";
-  el.pauseBtn.disabled = state.captureStatus !== "running";
-  el.stopBtn.disabled = state.captureStatus === "stopped";
+  el.startBtn.disabled = controlBusy || state.captureStatus === "running";
+  el.pauseBtn.disabled = controlBusy || state.captureStatus !== "running";
+  el.stopBtn.disabled = controlBusy || state.captureStatus === "stopped";
   el.requestCount.textContent = state.requests.length;
   el.hookCount.textContent = state.hooks.length;
   el.storageCount.textContent = state.snapshots.length;
   el.errorCount.textContent = state.requests.filter((item) => item.status >= 400).length;
+  el.statusText.textContent = state.captureStatus === "running" ? "Running" : state.captureStatus === "paused" ? "Paused" : "Stopped";
   el.snapshotBtn.disabled = !state.options.captureCookies;
 }
 
@@ -599,6 +625,11 @@ function handleRequestAction(action, item) {
 }
 
 function clearSession() {
+  clearLocalSession();
+  requestBackground("capture:clear", { tabId }).catch(() => {});
+}
+
+function clearLocalSession() {
   state.requests = [];
   state.hooks = [];
   state.snapshots = [];
@@ -607,20 +638,40 @@ function clearSession() {
   render();
 }
 
+async function runCaptureControl(type, payload = {}, optimisticStatus = null) {
+  const previousStatus = state.captureStatus;
+  if (optimisticStatus) state.captureStatus = optimisticStatus;
+  controlBusy = true;
+  render();
+  try {
+    const message = await requestBackground(type, { tabId, ...payload });
+    if (message.status) state.captureStatus = message.status;
+  } catch (error) {
+    state.captureStatus = previousStatus;
+    el.analysisOutput.textContent = error instanceof Error ? error.message : String(error);
+  } finally {
+    controlBusy = false;
+    render();
+  }
+}
+
 function bindEvents() {
   el.startBtn.addEventListener("click", () => {
-    state.captureStatus = "running";
-    render();
+    state.options = {
+      captureNetwork: el.captureNetworkInput.checked,
+      captureHooks: el.captureHooksInput.checked,
+      captureStorage: el.captureStorageInput.checked,
+      captureCookies: el.captureCookiesInput.checked
+    };
+    runCaptureControl("capture:start", { options: state.options, attachDebugger: false }, "running");
   });
 
   el.pauseBtn.addEventListener("click", () => {
-    if (state.captureStatus === "running") state.captureStatus = "paused";
-    render();
+    runCaptureControl("capture:pause", {}, "paused");
   });
 
   el.stopBtn.addEventListener("click", () => {
-    state.captureStatus = "stopped";
-    render();
+    runCaptureControl("capture:stop", {}, "stopped");
   });
 
   el.reloadBtn.addEventListener("click", () => {
