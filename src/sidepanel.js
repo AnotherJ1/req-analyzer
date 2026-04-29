@@ -74,6 +74,8 @@ const i18n = {
     modelTesting: "正在测试模型...",
     modelOk: "模型测试通过。",
     analysisSending: "正在分析...\n协议：{provider}\n接口：{url}\n模型：{model}",
+    analysisComplete: "分析完成，用时：",
+    elapsed: "已请求",
     captureStarted: "运行中",
     capturePaused: "已暂停",
     captureStopped: "已停止"
@@ -153,6 +155,8 @@ const i18n = {
     modelTesting: "Testing model...",
     modelOk: "Model test passed.",
     analysisSending: "Analyzing...\nProvider: {provider}\nEndpoint: {url}\nModel: {model}",
+    analysisComplete: "Analysis complete. Duration:",
+    elapsed: "Elapsed",
     captureStarted: "Running",
     capturePaused: "Paused",
     captureStopped: "Stopped"
@@ -185,6 +189,7 @@ const port = chrome.runtime.connect({ name: "analyzer-sidepanel" });
 const pending = new Map();
 let requestSeq = 0;
 let controlBusy = false;
+let aiRequestTimer = null;
 const AI_ANALYSIS_TIMEOUT_MS = 10 * 60 * 1000;
 
 const $ = (id) => document.getElementById(id);
@@ -244,6 +249,37 @@ function t(key) {
 
 function formatMessage(template, values) {
   return template.replace(/\{(\w+)\}/g, (_, key) => values[key] ?? "");
+}
+
+function formatAiRequestStatus(data) {
+  if (globalThis.requestTimer?.formatAiRequestStatus) {
+    return globalThis.requestTimer.formatAiRequestStatus({ language: state.language, ...data });
+  }
+  const elapsedSeconds = Math.floor(Math.max(0, data.elapsedMs) / 1000);
+  if (data.phase === "done") return `${t("analysisComplete")} ${elapsedSeconds}s`;
+  return `${formatMessage(t("analysisSending"), data)}\n${t("elapsed")}: ${elapsedSeconds}s`;
+}
+
+function startAiRequestTimer(context) {
+  const startedAt = Date.now();
+  const renderElapsed = () => {
+    el.analysisOutput.textContent = formatAiRequestStatus({
+      phase: "running",
+      elapsedMs: Date.now() - startedAt,
+      ...context
+    });
+  };
+  renderElapsed();
+  aiRequestTimer = { startedAt, intervalId: setInterval(renderElapsed, 1000) };
+}
+
+function stopAiRequestTimer(phase = "done") {
+  if (!aiRequestTimer) return 0;
+  clearInterval(aiRequestTimer.intervalId);
+  const elapsedMs = Date.now() - aiRequestTimer.startedAt;
+  aiRequestTimer = null;
+  if (phase === "done") el.analysisOutput.textContent = formatAiRequestStatus({ phase, elapsedMs });
+  return elapsedMs;
 }
 
 function applyI18n() {
@@ -527,6 +563,7 @@ function currentOptions() {
 }
 
 function clearLocalSession() {
+  stopAiRequestTimer("cancel");
   state.requests = [];
   state.hooks = [];
   state.snapshots = [];
@@ -710,6 +747,7 @@ async function sendChatMessage(content) {
 }
 
 async function sendAiMessage(content, options = {}) {
+  if (aiRequestTimer) return;
   if (!state.settings.apiKey) {
     switchView("settings");
     el.analysisOutput.textContent = t("needAi");
@@ -727,7 +765,7 @@ async function sendAiMessage(content, options = {}) {
 
   const baseUrl = normalizeBaseUrl(state.settings.baseUrl, state.settings.provider);
   const analysisUrl = state.settings.provider === "anthropic" ? `${baseUrl}/messages` : `${baseUrl}/chat/completions`;
-  el.analysisOutput.textContent = formatMessage(t("analysisSending"), {
+  startAiRequestTimer({
     provider: state.settings.provider,
     url: analysisUrl,
     model: state.settings.model
@@ -741,10 +779,12 @@ async function sendAiMessage(content, options = {}) {
   try {
     const requestContent = buildConversationPrompt(content, payload);
     const result = state.settings.provider === "anthropic" ? await callAnthropic(requestContent) : await callOpenAi(requestContent);
+    const elapsedMs = stopAiRequestTimer("done");
     state.chat.push({ role: "assistant", content: result });
     renderChat();
-    el.analysisOutput.textContent = result;
+    el.analysisOutput.textContent = `${formatAiRequestStatus({ phase: "done", elapsedMs })}\n\n${result}`;
   } catch (error) {
+    stopAiRequestTimer("error");
     el.analysisOutput.textContent = error instanceof Error ? error.message : String(error);
   } finally {
     el.analyzeBtn.disabled = false;
@@ -890,6 +930,7 @@ function normalizeImportedItems(value) {
 
 function importCapturedData(data) {
   if (!data || typeof data !== "object") throw new Error("Invalid JSON shape.");
+  stopAiRequestTimer("cancel");
 
   state.requests = normalizeImportedItems(data.requests).map(normalizeRequest);
   state.hooks = normalizeImportedItems(data.hooks);

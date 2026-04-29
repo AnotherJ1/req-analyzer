@@ -18,6 +18,7 @@ const requiredFiles = [
   "src/popup.js",
   "src/sidepanel.html",
   "src/sidepanel.css",
+  "src/request-timer.js",
   "src/sidepanel.js",
   "src/content.js",
   "src/injected.js",
