@@ -1,3 +1,5 @@
+import "./capture-utils.js";
+
 const uiPorts = new Map();
 const captures = new Map();
 
@@ -13,6 +15,7 @@ function getCapture(tabId) {
       status: "stopped",
       requests: new Map(),
       sequence: 0,
+      version: 0,
       options: {
         captureNetwork: true,
         captureHooks: true,
@@ -71,6 +74,7 @@ async function startCapture(tabId, options = {}, attachDebugger = true) {
   const capture = getCapture(tabId);
   capture.options = { ...capture.options, ...options };
   capture.status = "running";
+  capture.version += 1;
 
   if (attachDebugger && !capture.attached) {
     await chrome.debugger.attach(debuggee(tabId), "1.3");
@@ -89,6 +93,8 @@ async function startCapture(tabId, options = {}, attachDebugger = true) {
 async function pauseCapture(tabId) {
   const capture = getCapture(tabId);
   if (capture.status !== "stopped") capture.status = "paused";
+  capture.version += 1;
+  capture.requests.clear();
   postToUis(tabId, { type: "capture:status", status: capture.status });
   return capture.status;
 }
@@ -96,6 +102,7 @@ async function pauseCapture(tabId) {
 async function stopCapture(tabId) {
   const capture = getCapture(tabId);
   capture.status = "stopped";
+  capture.version += 1;
   capture.requests.clear();
 
   if (capture.attached) {
@@ -109,6 +116,7 @@ async function stopCapture(tabId) {
 
 async function clearCapture(tabId) {
   const capture = getCapture(tabId);
+  capture.version += 1;
   capture.requests.clear();
   capture.sequence = 0;
   postToUis(tabId, { type: "capture:cleared" });
@@ -431,17 +439,27 @@ chrome.debugger.onEvent.addListener(async (source, method, params) => {
   if (method === "Network.loadingFinished") {
     const item = capture.requests.get(params.requestId);
     if (!item) return;
+    const version = capture.version;
     item.time = item.monotonicStart ? Math.round((params.timestamp - item.monotonicStart) * 1000) : 0;
     item.bodySize = params.encodedDataLength || 0;
     try {
       const body = await sendDebugger(tabId, "Network.getResponseBody", { requestId: params.requestId });
-      item.responseBody = body.base64Encoded ? `[base64:${body.body.length}]` : body.body;
-      item.responseEncoding = body.base64Encoded ? "base64" : "";
+      if (capture.status !== "running" || capture.version !== version) return;
+      const normalized = globalThis.captureUtils.normalizeCapturedBody(body.base64Encoded ? `[base64:${body.body.length}]` : body.body, {
+        mimeType: item.mimeType,
+        encoding: body.base64Encoded ? "base64" : ""
+      });
+      item.responseBody = normalized.body;
+      item.responseEncoding = normalized.encoding;
+      item.responseTruncated = normalized.truncated;
+      item.responseBodyOmitted = normalized.omitted;
     } catch {
+      if (capture.status !== "running" || capture.version !== version) return;
       item.responseBody = "";
       item.responseEncoding = "";
     }
-    postToUis(tabId, { type: "network:request", payload: item });
+    if (capture.status !== "running" || capture.version !== version) return;
+    postToUis(tabId, { type: "network:request", payload: globalThis.captureUtils.prepareCapturedRequest(item) });
     capture.requests.delete(params.requestId);
   }
 
@@ -451,7 +469,8 @@ chrome.debugger.onEvent.addListener(async (source, method, params) => {
     item.errorText = params.errorText;
     item.canceled = params.canceled;
     item.status = 0;
-    postToUis(tabId, { type: "network:request", payload: item });
+    if (capture.status !== "running") return;
+    postToUis(tabId, { type: "network:request", payload: globalThis.captureUtils.prepareCapturedRequest(item) });
     capture.requests.delete(params.requestId);
   }
 });
@@ -461,6 +480,7 @@ chrome.debugger.onDetach.addListener((source) => {
   if (!Number.isInteger(tabId)) return;
   const capture = getCapture(tabId);
   capture.status = "stopped";
+  capture.version += 1;
   capture.attached = false;
   capture.requests.clear();
   postToUis(tabId, { type: "capture:status", status: "stopped" });

@@ -163,6 +163,9 @@ const i18n = {
   }
 };
 
+const { prepareCapturedRequest, prepareSearchableEvent, stripDerivedFields, visibleRecentItems } = globalThis.captureUtils;
+const VISIBLE_REQUEST_LIMIT = 200;
+
 const state = {
   tabId: null,
   status: "stopped",
@@ -189,6 +192,7 @@ const port = chrome.runtime.connect({ name: "analyzer-sidepanel" });
 const pending = new Map();
 let requestSeq = 0;
 let controlBusy = false;
+let renderScheduled = false;
 let aiRequestTimer = null;
 const AI_ANALYSIS_TIMEOUT_MS = 10 * 60 * 1000;
 
@@ -292,7 +296,7 @@ function applyI18n() {
   }
   el.languageSelect.value = state.language;
   if (!state.requests.length && !state.hooks.length) el.analysisOutput.textContent = t("analysisEmpty");
-  render();
+  scheduleRender();
 }
 
 function requestBackground(type, payload = {}) {
@@ -318,20 +322,20 @@ port.onMessage.addListener((message) => {
       if (message.status) state.status = message.status;
       waiter.resolve(message);
     }
-    render();
+    scheduleRender();
     return;
   }
 
   if (message?.type === "background:ready") {
     state.tabId = message.tabId;
     state.status = message.status || "stopped";
-    render();
+    scheduleRender();
     return;
   }
 
   if (message?.type === "capture:status") {
     state.status = message.status;
-    render();
+    scheduleRender();
     return;
   }
 
@@ -341,23 +345,24 @@ port.onMessage.addListener((message) => {
   }
 
   if (message?.type === "network:request") {
+    if (state.status !== "running") return;
     state.requests.push(normalizeRequest(message.payload));
     trim(state.requests, 3000);
-    render();
+    scheduleRender();
     return;
   }
 
   if (message?.type === "hook:event") {
-    state.hooks.unshift({ id: `h-${state.hooks.length + 1}`, url: message.url, frameId: message.frameId, ...message.payload });
+    state.hooks.unshift(prepareSearchableEvent({ id: `h-${state.hooks.length + 1}`, url: message.url, frameId: message.frameId, ...message.payload }));
     trim(state.hooks, 1000);
-    render();
+    scheduleRender();
     return;
   }
 
   if (message?.type === "storage:snapshot") {
-    state.snapshots.unshift({ id: `s-${state.snapshots.length + 1}`, url: message.url, frameId: message.frameId, ...message.payload });
+    state.snapshots.unshift(prepareSearchableEvent({ id: `s-${state.snapshots.length + 1}`, url: message.url, frameId: message.frameId, ...message.payload }));
     trim(state.snapshots, 300);
-    render();
+    scheduleRender();
   }
 });
 
@@ -366,7 +371,7 @@ function trim(items, limit) {
 }
 
 function normalizeRequest(item) {
-  return {
+  return prepareCapturedRequest({
     id: `r-${item.seq || state.requests.length + 1}`,
     seq: item.seq || state.requests.length + 1,
     domain: parseDomain(item.url),
@@ -377,7 +382,7 @@ function normalizeRequest(item) {
     requestBody: item.requestBody || "",
     responseBody: item.responseBody || "",
     ...item
-  };
+  });
 }
 
 function parseDomain(url) {
@@ -417,8 +422,16 @@ function matchesStatus(item) {
 }
 
 function matchesFilter(item) {
-  const haystack = JSON.stringify(item).toLowerCase();
-  return (!state.search || haystack.includes(state.search.toLowerCase())) && matchesStatus(item);
+  return (!state.search || (item.searchText || "").includes(state.search.toLowerCase())) && matchesStatus(item);
+}
+
+function scheduleRender() {
+  if (renderScheduled) return;
+  renderScheduled = true;
+  requestAnimationFrame(() => {
+    renderScheduled = false;
+    render();
+  });
 }
 
 function render() {
@@ -439,7 +452,7 @@ function render() {
 }
 
 function renderRequests() {
-  const items = state.requests.filter(matchesFilter).slice().reverse();
+  const items = visibleRecentItems(state.requests.filter(matchesFilter), VISIBLE_REQUEST_LIMIT);
   el.requestsList.innerHTML = items.length ? items.map((item) => `
     <article class="item ${state.selectedRequestId === item.id ? "selected" : ""}" data-id="${escapeHtml(item.id)}">
       <div class="meta">
@@ -458,13 +471,6 @@ function renderRequests() {
       ${state.selectedRequestId === item.id ? `<pre class="code">${escapeHtml(JSON.stringify(compactRequest(item), null, 2))}</pre>` : ""}
     </article>
   `).join("") : `<div class="empty">${t("noRequests")}</div>`;
-
-  for (const article of el.requestsList.querySelectorAll(".item")) {
-    const item = state.requests.find((request) => request.id === article.dataset.id);
-    for (const button of article.querySelectorAll("button[data-action]")) {
-      button.addEventListener("click", () => handleRequestAction(button.dataset.action, item));
-    }
-  }
 }
 
 function renderHooks() {
@@ -540,7 +546,7 @@ function handleRequestAction(action, item) {
   if (!item) return;
   if (action === "select") {
     state.selectedRequestId = item.id;
-    render();
+    scheduleRender();
     return;
   }
   if (action === "fetch") copyText(buildFetchSnippet(item));
@@ -569,7 +575,7 @@ function clearLocalSession() {
   state.snapshots = [];
   state.selectedRequestId = null;
   state.chat = [];
-  render();
+  scheduleRender();
 }
 
 async function runCaptureControl(type, payload = {}, optimisticStatus = null) {
@@ -577,7 +583,7 @@ async function runCaptureControl(type, payload = {}, optimisticStatus = null) {
   const previousStatus = state.status;
   if (optimisticStatus) state.status = optimisticStatus;
   controlBusy = true;
-  render();
+  scheduleRender();
   try {
     const message = await requestBackground(type, { tabId: state.tabId, ...payload });
     if (message.status) state.status = message.status;
@@ -586,7 +592,7 @@ async function runCaptureControl(type, payload = {}, optimisticStatus = null) {
     el.analysisOutput.textContent = error instanceof Error ? error.message : String(error);
   } finally {
     controlBusy = false;
-    render();
+    scheduleRender();
   }
 }
 
@@ -619,7 +625,7 @@ async function saveSettings() {
   el.baseUrlInput.value = state.settings.baseUrl;
   await requestBackground("storage:set", { data: { aiSettings: state.settings, language: state.language } });
   el.settingsStatus.textContent = t("saved");
-  render();
+  scheduleRender();
 }
 
 async function fetchModelList() {
@@ -717,7 +723,7 @@ function presetPrompt(kind) {
     api: "请基于当前捕获内容，梳理主要接口、调用顺序、鉴权方式、关键参数含义，并指出哪些请求最值得继续分析。",
     risk: "请检查当前捕获内容中的安全风险，包括 Token 泄露、敏感数据、弱鉴权、危险响应头、CSRF/XSS 相关线索，并按风险等级输出。",
     crypto: "请分析当前捕获内容中的加密、签名、摘要、nonce、timestamp、crypto.subtle 调用和可复现思路。",
-    replay: "请为关键请求生成可复现代码，优先给出 curl 和 JavaScript fetch，并说明需要替换的 token、cookie 或动态参数。"
+    replay: "请为关键请求生成可复现的 Python 代码，优先使用 requests 库；包含 URL、method、headers、cookies、params/body，并说明需要替换的 token、cookie 或动态参数。不要输出 curl 或 JavaScript fetch，除非 Python 无法表达。"
   }[kind] || "";
 }
 
@@ -905,7 +911,7 @@ function buildSessionExport() {
     exportedAt: new Date().toISOString(),
     tabId: state.tabId,
     status: state.status,
-    requests: state.requests,
+    requests: state.requests.map(stripDerivedFields),
     hooks: state.hooks,
     snapshots: state.snapshots,
     selectedRequestId: state.selectedRequestId,
@@ -943,7 +949,7 @@ function importCapturedData(data) {
   el.searchInput.value = state.search;
   el.statusFilter.value = state.statusFilter;
   el.analysisOutput.textContent = typeof data.analysisOutput === "string" ? data.analysisOutput : t("analysisEmpty");
-  render();
+  scheduleRender();
 }
 
 async function importCapturedDataFile(file) {
@@ -986,13 +992,21 @@ function bindEvents() {
   el.importDataBtn.addEventListener("click", () => el.importDataInput.click());
   el.importDataInput.addEventListener("change", () => importCapturedDataFile(el.importDataInput.files?.[0]));
 
+  el.requestsList.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-action]");
+    const article = event.target.closest(".item[data-id]");
+    if (!button || !article) return;
+    const item = state.requests.find((request) => request.id === article.dataset.id);
+    handleRequestAction(button.dataset.action, item);
+  });
+
   el.searchInput.addEventListener("input", () => {
     state.search = el.searchInput.value;
-    render();
+    scheduleRender();
   });
   el.statusFilter.addEventListener("change", () => {
     state.statusFilter = el.statusFilter.value;
-    render();
+    scheduleRender();
   });
 
   for (const tab of document.querySelectorAll(".tab")) {
@@ -1001,8 +1015,8 @@ function bindEvents() {
 
   el.snapshotBtn.addEventListener("click", async () => {
     const message = await requestBackground("cookies:get", { tabId: state.tabId });
-    state.snapshots.unshift({ id: `s-${state.snapshots.length + 1}`, reason: "cookies-api", capturedAt: new Date().toISOString(), cookies: message.cookies });
-    render();
+    state.snapshots.unshift(prepareSearchableEvent({ id: `s-${state.snapshots.length + 1}`, reason: "cookies-api", capturedAt: new Date().toISOString(), cookies: message.cookies }));
+    scheduleRender();
   });
 
   el.providerSelect.addEventListener("change", () => {

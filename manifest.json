@@ -26,6 +26,7 @@
         "<all_urls>"
       ],
       "js": [
+        "src/capture-utils.js",
         "src/content.js"
       ],
       "run_at": "document_start",
