@@ -168,6 +168,7 @@ const VISIBLE_REQUEST_LIMIT = 200;
 
 const state = {
   tabId: null,
+  targetTab: null,
   status: "stopped",
   language: "zh-CN",
   requests: [],
@@ -327,8 +328,14 @@ port.onMessage.addListener((message) => {
   }
 
   if (message?.type === "background:ready") {
-    state.tabId = message.tabId;
+    updateTargetTab(message.tab, message.tabId);
     state.status = message.status || "stopped";
+    scheduleRender();
+    return;
+  }
+
+  if (message?.type === "tab:updated" && message.tab?.id === state.tabId) {
+    updateTargetTab(message.tab, message.tab.id);
     scheduleRender();
     return;
   }
@@ -393,6 +400,33 @@ function parseDomain(url) {
   }
 }
 
+function formatTargetLabel() {
+  const title = state.targetTab?.title?.trim();
+  if (title) return title;
+
+  const url = state.targetTab?.url?.trim();
+  if (url) {
+    try {
+      return new URL(url).hostname || url;
+    } catch {
+      return url;
+    }
+  }
+
+  return state.tabId ? `Tab ${state.tabId}` : "Tab";
+}
+
+function updateTargetTab(tab, tabId = tab?.id) {
+  state.tabId = Number.isInteger(tabId) ? tabId : null;
+  state.targetTab = tab && typeof tab === "object"
+    ? {
+        id: tab.id,
+        title: tab.title || "",
+        url: tab.url || ""
+      }
+    : null;
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -435,7 +469,9 @@ function scheduleRender() {
 }
 
 function render() {
-  el.targetLabel.textContent = state.tabId ? `Tab ${state.tabId}` : "Tab";
+  const targetLabel = formatTargetLabel();
+  el.targetLabel.textContent = targetLabel;
+  el.targetLabel.title = state.targetTab?.url || targetLabel;
   el.statusText.textContent = state.status === "running" ? t("captureStarted") : state.status === "paused" ? t("capturePaused") : t("captureStopped");
   el.requestCount.textContent = state.requests.length;
   el.hookCount.textContent = state.hooks.length;

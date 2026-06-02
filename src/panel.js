@@ -4,6 +4,7 @@ const { normalizeCapturedBody, prepareCapturedRequest, prepareSearchableEvent, s
 const VISIBLE_REQUEST_LIMIT = 200;
 
 const state = {
+  targetTab: null,
   captureStatus: "stopped",
   requests: [],
   hooks: [],
@@ -106,7 +107,14 @@ port.onMessage.addListener((message) => {
 
   if (message?.type === "background:ready") {
     if ((message.status || "stopped") !== state.captureStatus) captureVersion += 1;
+    updateTargetTab(message.tab, message.tabId);
     state.captureStatus = message.status || "stopped";
+    scheduleRender();
+    return;
+  }
+
+  if (message?.type === "tab:updated" && message.tab?.id === tabId) {
+    updateTargetTab(message.tab, message.tab.id);
     scheduleRender();
     return;
   }
@@ -185,6 +193,32 @@ function parseDomain(url) {
   } catch {
     return "";
   }
+}
+
+function formatTargetLabel() {
+  const title = state.targetTab?.title?.trim();
+  if (title) return title;
+
+  const url = state.targetTab?.url?.trim();
+  if (url) {
+    try {
+      return new URL(url).hostname || url;
+    } catch {
+      return url;
+    }
+  }
+
+  return `DevTools tab ${tabId}`;
+}
+
+function updateTargetTab(tab, fallbackTabId = tab?.id) {
+  state.targetTab = tab && typeof tab === "object"
+    ? {
+        id: tab.id ?? fallbackTabId,
+        title: tab.title || "",
+        url: tab.url || ""
+      }
+    : null;
 }
 
 function matchesFilter(item) {
@@ -269,6 +303,9 @@ function scheduleRender() {
 }
 
 function render() {
+  const targetLabel = formatTargetLabel();
+  el.targetLabel.textContent = targetLabel;
+  el.targetLabel.title = state.targetTab?.url || targetLabel;
   renderSummary();
   renderDomains();
   renderRequests();
@@ -774,7 +811,6 @@ function bindEvents() {
 }
 
 function init() {
-  el.targetLabel.textContent = `DevTools tab ${tabId}`;
   bindEvents();
   loadSettings().catch(() => {});
   scheduleRender();

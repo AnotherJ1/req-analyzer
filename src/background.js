@@ -122,9 +122,26 @@ async function clearCapture(tabId) {
   postToUis(tabId, { type: "capture:cleared" });
 }
 
-async function activeTabId() {
+function formatTabInfo(tab) {
+  return {
+    id: tab?.id,
+    title: tab?.title || "",
+    url: tab?.url || ""
+  };
+}
+
+async function getTabInfo(tabId) {
+  if (!Number.isInteger(tabId)) return formatTabInfo(null);
+  try {
+    return formatTabInfo(await chrome.tabs.get(tabId));
+  } catch {
+    return { id: tabId, title: "", url: "" };
+  }
+}
+
+async function activeTabInfo() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  return tab?.id;
+  return formatTabInfo(tab);
 }
 
 async function getCookies(tabId) {
@@ -297,20 +314,22 @@ chrome.runtime.onConnect.addListener((port) => {
       if (message?.type === "panel:init") {
         attachedTabId = message.tabId;
         addPort(attachedTabId, port);
-        port.postMessage({ type: "background:ready", tabId: attachedTabId, status: getCapture(attachedTabId).status });
+        const tab = await getTabInfo(attachedTabId);
+        port.postMessage({ type: "background:ready", tabId: attachedTabId, tab, status: getCapture(attachedTabId).status });
         return;
       }
 
       if (message?.type === "sidepanel:init") {
-        attachedTabId = message.tabId || await activeTabId();
-        addPort(attachedTabId, port);
-        port.postMessage({ type: "background:ready", tabId: attachedTabId, status: getCapture(attachedTabId).status });
+        const tab = message.tabId ? await getTabInfo(message.tabId) : await activeTabInfo();
+        attachedTabId = tab.id;
+        if (Number.isInteger(attachedTabId)) addPort(attachedTabId, port);
+        port.postMessage({ type: "background:ready", tabId: attachedTabId, tab, status: Number.isInteger(attachedTabId) ? getCapture(attachedTabId).status : "stopped" });
         return;
       }
 
       if (message?.type === "tabs:active") {
-        const tabId = await activeTabId();
-        port.postMessage({ type: "tabs:active", requestId: message.requestId, tabId });
+        const tab = await activeTabInfo();
+        port.postMessage({ type: "tabs:active", requestId: message.requestId, tabId: tab.id, tab });
         return;
       }
 
@@ -374,6 +393,11 @@ chrome.runtime.onConnect.addListener((port) => {
   port.onDisconnect.addListener(() => {
     if (attachedTabId !== null) removePort(attachedTabId, port);
   });
+});
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (!("title" in changeInfo) && !("url" in changeInfo) && changeInfo.status !== "complete") return;
+  postToUis(tabId, { type: "tab:updated", tab: formatTabInfo(tab) });
 });
 
 chrome.runtime.onMessage.addListener((message, sender) => {

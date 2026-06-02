@@ -95,7 +95,14 @@ select {
 .brand {
   display: flex;
   flex-direction: column;
-  min-width: 200px;
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.brand #targetLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .brand span,
