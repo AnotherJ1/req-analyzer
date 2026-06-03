@@ -29,7 +29,6 @@ Anything Analyzer Browser 是一个 Chrome/Edge DevTools 插件，灵感来自
 - 支持导出 Session JSON、HAR、Requests JSON、Hooks JSON、Storage JSON、Analysis Markdown
 - 支持在请求详情里一键复制 `fetch` 复现代码和 `cURL` 命令
 - 支持 OpenAI-compatible 接口做 AI 分析
-- 支持 Claude Code / Anthropic Messages 协议
 - 支持通过浏览器右侧面板配置 AI 参数
 - Model 输入框支持手输，也支持拉取模型列表后从输入提示中选择
 - 支持测试当前模型是否可用
@@ -61,19 +60,13 @@ D:\work\cc\google-plagin
 
 在 `Analyzer` 面板右上角点击 `Settings`，填写：
 
-- `协议`：`OpenAI Compatible` 或 `Claude Code / Anthropic Messages`
-- `Base URL`：只需要填写域名即可，例如 `api.openai.com` 或 `api.anthropic.com`。插件会自动补全 `https://` 和 `/v1`
+- `Base URL`：只需要填写 OpenAI-compatible 服务域名即可，例如 `api.openai.com`。插件会自动补全 `https://` 和 `/v1`
 - `API key`：你的模型服务密钥
 - `Model`：模型名，例如 `gpt-4.1-mini`，也可以填写你的服务支持的其他模型
-- `获取`：从当前协议的 `/models` 接口拉取模型列表，拉取成功后可在 `Model` 输入框中选择
-- `测试模型`：用当前协议、Base URL、API Key 和 Model 发起一次最小请求，验证模型是否可用
+- `获取`：从 OpenAI-compatible `/models` 接口拉取模型列表，拉取成功后可在 `Model` 输入框中选择
+- `测试模型`：用 Base URL、API Key 和 Model 发起一次 OpenAI-compatible 最小请求，验证模型是否可用
 - `Max captured body chars per request`：每个请求/响应 body 发送给 AI 的最大字符数
 
-Claude / Anthropic 推荐 Base URL：
-
-```text
-api.anthropic.com
-```
 
 插件只会在你点击 `Analyze` 时，把当前捕获到的请求摘要、部分 body、Hook 事件和存储快照发送到你配置的接口。
 

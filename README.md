@@ -23,7 +23,6 @@ Anything Analyzer Browser is a Chrome/Edge DevTools extension inspired by
 - Session JSON, HAR, requests, hooks, storage, and analysis export
 - One-click `fetch` and `cURL` reproduction snippets from the request detail view
 - OpenAI-compatible AI analysis with configurable base URL, API key, model, and body limit
-- Claude Code / Anthropic Messages protocol support
 - Model input supports both typing and selecting fetched models
 - Test the configured model with a minimal request
 - Conversational AI analysis with preset prompts and custom follow-up questions
