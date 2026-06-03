@@ -24,7 +24,7 @@ const state = {
     baseUrl: "https://api.openai.com/v1",
     apiKey: "",
     model: "gpt-4.1-mini",
-    bodyLimit: 4096
+    bodyLimit: 10000
   }
 };
 
@@ -430,7 +430,7 @@ async function saveSettings() {
     baseUrl: el.baseUrlInput.value.trim().replace(/\/+$/, ""),
     apiKey: el.apiKeyInput.value.trim(),
     model: el.modelInput.value.trim() || "gpt-4.1-mini",
-    bodyLimit: Number(el.bodyLimitInput.value) || 4096
+    bodyLimit: Number(el.bodyLimitInput.value) || 10000
   };
   await requestBackground("storage:set", { data: { aiSettings: state.settings } });
 }

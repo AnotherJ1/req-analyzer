@@ -2,7 +2,7 @@ const defaults = {
   baseUrl: "api.openai.com",
   apiKey: "",
   model: "gpt-4.1-mini",
-  bodyLimit: 4096
+  bodyLimit: 10000
 };
 
 const el = {
