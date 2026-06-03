@@ -1,8 +1,8 @@
-# Anything Analyzer Browser
+# Req Analyzer
 
 [English](README.md)
 
-Anything Analyzer Browser 是一个 Chrome/Edge DevTools 插件，灵感来自
+Req Analyzer 是一个 Chrome/Edge DevTools 插件，灵感来自
 [Mouseww/anything-analyzer](https://github.com/Mouseww/anything-analyzer)。
 
 这一版专注于浏览器插件最适合做的部分：**分析当前正在调试的浏览器标签页**。它不会尝试替代桌面版的 MITM 代理、系统代理和证书管理能力，而是把“网页请求捕获 + JS Hook + 存储快照 + AI 分析”做成一个轻量可加载的插件 MVP。
@@ -48,7 +48,7 @@ D:\work\cc\google-plagin
 ```
 
 6. 打开任意网页。
-7. 点击浏览器工具栏中的插件图标，右侧会打开 Anything Analyzer 面板。
+7. 点击浏览器工具栏中的插件图标，右侧会打开 Req Analyzer 面板。
 8. 点击 `开始`。
 9. 刷新页面并正常操作网站。
 

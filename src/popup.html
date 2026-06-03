@@ -3,48 +3,55 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Anything Analyzer</title>
+    <title data-i18n="popupTitle">Req Analyzer</title>
     <link rel="stylesheet" href="popup.css">
   </head>
   <body>
     <main>
       <header>
-        <strong>Anything Analyzer</strong>
-        <span>Browser plugin controls</span>
+        <strong data-i18n="appTitle">Req Analyzer</strong>
+        <span data-i18n="popupSubtitle">Browser plugin controls</span>
+        <select id="languageSelect" title="Language">
+          <option value="en">English</option>
+          <option value="zh-CN">中文</option>
+          <option value="ja">日本語</option>
+          <option value="ko">한국어</option>
+        </select>
       </header>
 
       <section>
-        <h1>Run Capture</h1>
+        <h1 data-i18n="runCaptureTitle">Run Capture</h1>
         <ol>
-          <li>Open the page you want to analyze.</li>
-          <li>Open DevTools.</li>
-          <li>Select the <b>Analyzer</b> panel.</li>
-          <li>Click <b>Start</b>.</li>
+          <li data-i18n="runCaptureTip1">Open the page you want to analyze.</li>
+          <li data-i18n="runCaptureTip2">Open DevTools.</li>
+          <li data-i18n="runCaptureTip3">Select the <b>Analyzer</b> panel.</li>
+          <li data-i18n="runCaptureTip4">Click <b>Start</b>.</li>
         </ol>
       </section>
 
       <section>
-        <h1>AI Settings</h1>
+        <h1 data-i18n="aiSettingsTitle">AI Settings</h1>
         <label>
-          Base URL
+          <span data-i18n="baseUrl">Base URL</span>
           <input id="baseUrlInput" placeholder="https://api.openai.com/v1">
         </label>
         <label>
-          API key
+          <span data-i18n="apiKey">API key</span>
           <input id="apiKeyInput" type="password" placeholder="sk-...">
         </label>
         <label>
-          Model
+          <span data-i18n="model">Model</span>
           <input id="modelInput" placeholder="gpt-4.1-mini">
         </label>
         <label>
-          Body chars
+          <span data-i18n="bodyLimit">Body chars</span>
           <input id="bodyLimitInput" type="number" min="512" max="20000" step="512">
         </label>
-        <button id="saveBtn">Save Settings</button>
+        <button id="saveBtn" data-i18n="saveSettings">Save Settings</button>
         <p id="statusText"></p>
       </section>
     </main>
+    <script src="i18n.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>

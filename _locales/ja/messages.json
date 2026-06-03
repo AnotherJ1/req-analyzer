@@ -1,0 +1,8 @@
+{
+  "appName": {
+    "message": "Req Analyzer"
+  },
+  "appDescription": {
+    "message": "ブラウザのサイドパネルに固定された AI 対応トラフィック分析ツール。"
+  }
+}

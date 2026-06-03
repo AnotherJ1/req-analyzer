@@ -1,8 +1,8 @@
-# Anything Analyzer Browser
+# Req Analyzer
 
 [简体中文](README.zh-CN.md)
 
-Anything Analyzer Browser is a Chrome/Edge DevTools extension inspired by
+Req Analyzer is a Chrome/Edge DevTools extension inspired by
 [Mouseww/anything-analyzer](https://github.com/Mouseww/anything-analyzer). It focuses on the part that works best inside a browser extension: analyzing the currently inspected tab.
 
 ## Features
@@ -51,7 +51,7 @@ The extension sends captured request summaries, selected bodies, hooks, and stor
 
 ## Current Scope
 
-This is the recommended MVP plugin version. It intentionally does not include the desktop-only parts of Anything Analyzer:
+This is the recommended MVP plugin version. It intentionally does not include the desktop-only parts of Req Analyzer:
 
 - MITM HTTPS proxy
 - CA certificate installation

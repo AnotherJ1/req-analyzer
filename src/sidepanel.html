@@ -1,21 +1,23 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Anything Analyzer</title>
+    <title>Req Analyzer</title>
     <link rel="stylesheet" href="sidepanel.css">
   </head>
   <body>
     <main class="app">
       <header class="topbar">
         <div>
-          <strong data-i18n="appTitle">Anything Analyzer</strong>
+          <strong data-i18n="appTitle">Req Analyzer</strong>
           <span id="targetLabel">Tab</span>
         </div>
         <select id="languageSelect" title="Language">
-          <option value="zh-CN">中文</option>
           <option value="en">English</option>
+          <option value="zh-CN">中文</option>
+          <option value="ja">日本語</option>
+          <option value="ko">한국어</option>
         </select>
       </header>
 
@@ -24,6 +26,7 @@
         <button id="pauseBtn" data-i18n="pause">暂停</button>
         <button id="stopBtn" class="danger" data-i18n="stop">停止</button>
         <button id="reloadBtn" data-i18n="reload">刷新</button>
+        <button id="snapshotBtn" data-i18n="manualSnapshot">手动 Cookie 快照</button>
         <button id="clearBtn" data-i18n="clear">清空</button>
         <button id="exportDataBtn" data-i18n="exportData">导出数据</button>
         <button id="importDataBtn" data-i18n="importData">导入数据</button>
@@ -54,6 +57,19 @@
           <option value="5xx">5xx</option>
           <option value="error" data-i18n="errors">错误</option>
         </select>
+        <select id="typeFilter">
+          <option value="" data-i18n="allTypes">全部类型</option>
+          <option value="fetch-xhr" data-i18n="typeFetchXhr">Fetch/XHR</option>
+          <option value="Document" data-i18n="typeDoc">Doc</option>
+          <option value="Stylesheet" data-i18n="typeCss">CSS</option>
+          <option value="Script" data-i18n="typeJs">JS</option>
+          <option value="Font" data-i18n="typeFont">Font</option>
+          <option value="Image" data-i18n="typeImg">Img</option>
+          <option value="Media" data-i18n="typeMedia">Media</option>
+          <option value="Manifest" data-i18n="typeManifest">Manifest</option>
+          <option value="WebSocket" data-i18n="typeWs">WS</option>
+          <option value="other" data-i18n="typeOther">Other</option>
+        </select>
       </section>
 
       <nav class="tabs">
@@ -73,7 +89,6 @@
       </section>
 
       <section id="storageView" class="view">
-        <button id="snapshotBtn" data-i18n="manualSnapshot">手动 Cookie 快照</button>
         <div id="storageList" class="list"></div>
       </section>
 
@@ -153,6 +168,7 @@
         </div>
       </section>
     </main>
+    <script src="i18n.js"></script>
     <script src="request-timer.js"></script>
     <script src="capture-utils.js"></script>
     <script src="sidepanel.js"></script>

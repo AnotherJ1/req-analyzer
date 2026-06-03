@@ -369,8 +369,15 @@ chrome.runtime.onConnect.addListener((port) => {
         return;
       }
 
-      if (message?.type === "cookies:get" && Number.isInteger(message.tabId)) {
-        const cookies = await getCookies(message.tabId);
+      if (message?.type === "cookies:get") {
+        // tabId 无效时回退到当前活动标签，避免侧边栏未绑定标签页时请求被静默丢弃
+        let targetTabId = message.tabId;
+        if (!Number.isInteger(targetTabId)) {
+          const active = await activeTabInfo();
+          targetTabId = active.id;
+        }
+        if (!Number.isInteger(targetTabId)) throw new Error("No active tab to read cookies from.");
+        const cookies = await getCookies(targetTabId);
         port.postMessage({ type: "cookies:value", requestId: message.requestId, cookies });
         return;
       }

@@ -36,6 +36,7 @@ let renderScheduled = false;
 
 const el = {
   targetLabel: document.getElementById("targetLabel"),
+  languageSelect: document.getElementById("languageSelect"),
   startBtn: document.getElementById("startBtn"),
   pauseBtn: document.getElementById("pauseBtn"),
   stopBtn: document.getElementById("stopBtn"),
@@ -321,14 +322,14 @@ function renderSummary() {
   el.hookCount.textContent = state.hooks.length;
   el.storageCount.textContent = state.snapshots.length;
   el.errorCount.textContent = state.requests.filter((item) => item.isError).length;
-  el.statusText.textContent = state.captureStatus === "running" ? "Running" : state.captureStatus === "paused" ? "Paused" : "Stopped";
+  el.statusText.textContent = state.captureStatus === "running" ? t("captureStarted") : state.captureStatus === "paused" ? t("capturePaused") : t("captureStopped");
   el.snapshotBtn.disabled = !state.options.captureCookies;
 }
 
 function renderDomains() {
   const domains = Array.from(new Set(state.requests.map((item) => item.domain).filter(Boolean))).sort();
   const current = el.domainFilter.value;
-  el.domainFilter.innerHTML = `<option value="">All domains</option>${domains
+  el.domainFilter.innerHTML = `<option value="">${t("allDomains")}</option>${domains
     .map((domain) => `<option value="${escapeHtml(domain)}">${escapeHtml(domain)}</option>`)
     .join("")}`;
   el.domainFilter.value = domains.includes(current) ? current : "";
@@ -354,29 +355,29 @@ function renderRequests() {
 function renderRequestDetail() {
   const item = state.requests.find((request) => request.id === state.selectedRequestId);
   if (!item) {
-    el.requestDetail.innerHTML = `<div class="empty">Select a request</div>`;
+    el.requestDetail.innerHTML = `<div class="empty">${t("selectRequest")}</div>`;
     return;
   }
 
   el.requestDetail.innerHTML = `
     <h3>${escapeHtml(item.method)} ${escapeHtml(item.url)}</h3>
     <div class="detailActions">
-      <button data-action="copy-fetch">Copy fetch</button>
-      <button data-action="copy-curl">Copy cURL</button>
-      <button data-action="analyze-request">Analyze this</button>
+      <button data-action="copy-fetch">${t("copyFetch")}</button>
+      <button data-action="copy-curl">${t("copyCurl")}</button>
+      <button data-action="analyze-request">${t("analyzeThis")}</button>
     </div>
     <dl class="kv">
-      <dt>Status</dt><dd>${escapeHtml(item.status)} ${escapeHtml(item.statusText)}</dd>
+      <dt>${t("tableStatus")}</dt><dd>${escapeHtml(item.status)} ${escapeHtml(item.statusText)}</dd>
       <dt>MIME</dt><dd>${escapeHtml(item.mimeType || "-")}</dd>
-      <dt>Time</dt><dd>${escapeHtml(item.time)} ms</dd>
-      <dt>Size</dt><dd>${escapeHtml(formatBytes(item.bodySize || item.responseBody.length))}</dd>
+      <dt>${t("tableTime")}</dt><dd>${escapeHtml(item.time)} ms</dd>
+      <dt>${t("tableSize")}</dt><dd>${escapeHtml(formatBytes(item.bodySize || item.responseBody.length))}</dd>
     </dl>
-    <h3>Request Headers</h3>
+    <h3>${t("requestHeaders")}</h3>
     <pre class="codeBlock">${escapeHtml(JSON.stringify(item.requestHeaders, null, 2))}</pre>
-    ${item.requestBody ? `<h3>Request Body</h3><pre class="codeBlock">${escapeHtml(item.requestBody.slice(0, 12000))}</pre>` : ""}
-    <h3>Response Headers</h3>
+    ${item.requestBody ? `<h3>${t("requestBody")}</h3><pre class="codeBlock">${escapeHtml(item.requestBody.slice(0, 12000))}</pre>` : ""}
+    <h3>${t("responseHeaders")}</h3>
     <pre class="codeBlock">${escapeHtml(JSON.stringify(item.responseHeaders, null, 2))}</pre>
-    ${item.responseBody ? `<h3>Response Body</h3><pre class="codeBlock">${escapeHtml(item.responseBody.slice(0, 12000))}</pre>` : ""}
+    ${item.responseBody ? `<h3>${t("responseBody")}</h3><pre class="codeBlock">${escapeHtml(item.responseBody.slice(0, 12000))}</pre>` : ""}
   `;
 
   for (const button of el.requestDetail.querySelectorAll("button[data-action]")) {
@@ -395,7 +396,7 @@ function renderHooks() {
       <h3>${escapeHtml(item.method || item.url || item.href || item.kind)}</h3>
       <pre class="codeBlock">${escapeHtml(JSON.stringify(item, null, 2))}</pre>
     </article>
-  `).join("") : `<div class="empty">No hook events captured</div>`;
+  `).join("") : `<div class="empty">${t("noHookEvents")}</div>`;
 }
 
 function renderStorage() {
@@ -409,7 +410,7 @@ function renderStorage() {
       <h3>${escapeHtml(item.href)}</h3>
       <pre class="codeBlock">${escapeHtml(JSON.stringify(item, null, 2))}</pre>
     </article>
-  `).join("") : `<div class="empty">No storage snapshots captured</div>`;
+  `).join("") : `<div class="empty">${t("noStorageSnapshots")}</div>`;
 }
 
 async function loadSettings() {
@@ -490,21 +491,21 @@ function modeInstruction(mode) {
 async function runAnalysis() {
   if (!state.settings.apiKey) {
     el.settingsDialog.showModal();
-    el.analysisOutput.textContent = "Add an API key before running analysis.";
+    el.analysisOutput.textContent = t("needAi");
     return;
   }
 
   const payload = buildAnalysisPayload();
   if (el.analysisScope.value === "selected" && payload.requests.length === 0) {
-    el.analysisOutput.textContent = "Select a request before analyzing the selected-request scope.";
+    el.analysisOutput.textContent = t("needSelected");
     return;
   }
   if (payload.requests.length === 0 && payload.hooks.length === 0) {
-    el.analysisOutput.textContent = "Capture some traffic before running analysis.";
+    el.analysisOutput.textContent = t("needData");
     return;
   }
 
-  el.analysisOutput.textContent = "Analyzing...\n";
+  el.analysisOutput.textContent = `${t("analyzing")}\n`;
   el.analyzeBtn.disabled = true;
 
   const messages = [
@@ -541,7 +542,7 @@ async function runAnalysis() {
     const data = await response.json();
     el.analysisOutput.textContent = data.choices?.[0]?.message?.content || JSON.stringify(data, null, 2);
   } catch (error) {
-    el.analysisOutput.textContent = `Analysis failed:\n${error instanceof Error ? error.message : String(error)}`;
+    el.analysisOutput.textContent = `${t("analysisFailed")}\n${error instanceof Error ? error.message : String(error)}`;
   } finally {
     el.analyzeBtn.disabled = false;
   }
@@ -562,7 +563,7 @@ function buildHarExport() {
     log: {
       version: "1.2",
       creator: {
-        name: "Anything Analyzer Browser",
+        name: "Req Analyzer Browser",
         version: "0.1.0"
       },
       entries: state.requests.map((item) => item.raw)
@@ -693,7 +694,7 @@ function clearLocalSession() {
   state.hooks = [];
   state.snapshots = [];
   state.selectedRequestId = null;
-  el.analysisOutput.textContent = "Session cleared.";
+  el.analysisOutput.textContent = t("sessionCleared");
   scheduleRender();
 }
 
@@ -752,7 +753,7 @@ function bindEvents() {
 
   el.snapshotBtn.addEventListener("click", () => {
     captureCookieSnapshot().catch((error) => {
-      el.analysisOutput.textContent = `Cookie snapshot failed: ${error.message}`;
+      el.analysisOutput.textContent = formatMessage(t("cookieSnapshotFailed"), { message: error.message });
     });
   });
 
@@ -812,6 +813,15 @@ function bindEvents() {
 
 function init() {
   bindEvents();
+  initI18n().then(() => {
+    el.languageSelect.value = globalThis.__i18nStore.lang;
+    el.languageSelect.addEventListener("change", () => {
+      globalThis.__i18nStore.setLang(el.languageSelect.value);
+      applyI18n();
+      scheduleRender();
+    });
+    applyI18n();
+  });
   loadSettings().catch(() => {});
   scheduleRender();
 }

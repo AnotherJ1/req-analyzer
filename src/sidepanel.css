@@ -60,9 +60,24 @@ select {
 }
 
 .app {
-  display: grid;
-  grid-template-rows: auto auto auto auto auto 1fr;
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
+}
+
+/* 顶部各功能区固定高度，最后激活的视图撑满剩余空间，避免 grid 行数错配产生中间空白 */
+.app > .topbar,
+.app > .captureBar,
+.app > .optionGrid,
+.app > .summary,
+.app > .filters,
+.app > .tabs {
+  flex: 0 0 auto;
+}
+
+.app > .view.active {
+  flex: 1 1 auto;
+  overflow: auto;
 }
 
 .topbar,
@@ -109,10 +124,20 @@ p {
 }
 
 .captureBar,
-.filters,
 .row {
   display: flex;
   gap: 8px;
+}
+
+/* 搜索框占满一行，两个下拉框各占一半，避免三者挤在一行过窄 */
+.filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.filters #searchInput {
+  grid-column: 1 / -1;
 }
 
 .captureBar {

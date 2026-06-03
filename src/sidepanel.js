@@ -1,167 +1,4 @@
-const i18n = {
-  "zh-CN": {
-    appTitle: "Anything Analyzer",
-    start: "开始",
-    pause: "暂停",
-    stop: "停止",
-    reload: "刷新",
-    clear: "清空",
-    exportData: "导出数据",
-    importData: "导入数据",
-    network: "网络",
-    hooks: "JS Hook",
-    storage: "存储快照",
-    cookies: "Cookie API",
-    requests: "请求",
-    hookEvents: "Hook",
-    snapshots: "快照",
-    state: "状态",
-    searchPlaceholder: "搜索 URL、状态、字段",
-    allStatus: "全部状态",
-    errors: "错误",
-    tabRequests: "请求",
-    tabHooks: "Hook",
-    tabStorage: "存储",
-    tabAi: "AI 分析",
-    tabSettings: "设置",
-    manualSnapshot: "手动 Cookie 快照",
-    analysisMode: "分析模式",
-    analysisScope: "分析范围",
-    modeAuto: "自动识别",
-    modeApi: "API 逆向",
-    modeSecurity: "安全审计",
-    modePerformance: "性能分析",
-    modeCrypto: "加密分析",
-    scopeAll: "全部数据",
-    scopeFiltered: "过滤后数据",
-    scopeSelected: "选中请求",
-    analyze: "开始分析",
-    copy: "复制",
-    exportMd: "导出 MD",
-    analysisEmpty: "配置 AI 后，捕获流量并点击开始分析。",
-    promptApi: "梳理接口和鉴权流程",
-    promptRisk: "检查安全风险",
-    promptCrypto: "分析加密/签名逻辑",
-    promptReplay: "生成复现代码",
-    chatPlaceholder: "输入你想追问的问题",
-    send: "发送",
-    userRole: "你",
-    assistantRole: "AI",
-    provider: "协议",
-    baseUrl: "Base URL",
-    apiKey: "API Key",
-    model: "Model",
-    fetchModels: "获取",
-    testModel: "测试模型",
-    bodyLimit: "Body 字符数",
-    anthropicVersion: "Anthropic Version",
-    saveSettings: "保存设置",
-    noRequests: "暂无请求，点击开始后刷新或操作页面。",
-    noHooks: "暂无 Hook 事件。",
-    noStorage: "暂无存储快照。",
-    selected: "已选择",
-    copied: "已复制。",
-    saved: "已保存。",
-    imported: "数据已导入。",
-    importFailed: "导入失败：{message}",
-    analyzing: "正在分析...",
-    needAi: "请先在设置里填写 API Key。",
-    needData: "请先捕获一些数据。",
-    needSelected: "请先选择一个请求。",
-    modelLoaded: "模型列表已获取。",
-    modelLoading: "正在获取模型列表...",
-    modelEmpty: "没有获取到模型。",
-    modelTesting: "正在测试模型...",
-    modelOk: "模型测试通过。",
-    analysisSending: "正在分析...\n接口：{url}\n模型：{model}",
-    analysisComplete: "分析完成，用时：",
-    elapsed: "已请求",
-    captureStarted: "运行中",
-    capturePaused: "已暂停",
-    captureStopped: "已停止"
-  },
-  en: {
-    appTitle: "Anything Analyzer",
-    start: "Start",
-    pause: "Pause",
-    stop: "Stop",
-    reload: "Reload",
-    clear: "Clear",
-    exportData: "Export Data",
-    importData: "Import Data",
-    network: "Network",
-    hooks: "JS Hooks",
-    storage: "Storage",
-    cookies: "Cookie API",
-    requests: "Requests",
-    hookEvents: "Hooks",
-    snapshots: "Snapshots",
-    state: "State",
-    searchPlaceholder: "Search URL, status, fields",
-    allStatus: "All status",
-    errors: "Errors",
-    tabRequests: "Requests",
-    tabHooks: "Hooks",
-    tabStorage: "Storage",
-    tabAi: "AI",
-    tabSettings: "Settings",
-    manualSnapshot: "Cookie Snapshot",
-    analysisMode: "Analysis mode",
-    analysisScope: "Scope",
-    modeAuto: "Auto detect",
-    modeApi: "API reverse engineering",
-    modeSecurity: "Security audit",
-    modePerformance: "Performance",
-    modeCrypto: "Crypto analysis",
-    scopeAll: "All data",
-    scopeFiltered: "Filtered data",
-    scopeSelected: "Selected request",
-    analyze: "Analyze",
-    copy: "Copy",
-    exportMd: "Export MD",
-    analysisEmpty: "Configure AI, capture traffic, then run analysis.",
-    promptApi: "Map APIs and auth",
-    promptRisk: "Check security risks",
-    promptCrypto: "Analyze crypto/signing",
-    promptReplay: "Generate replay code",
-    chatPlaceholder: "Ask a follow-up question",
-    send: "Send",
-    userRole: "You",
-    assistantRole: "AI",
-    provider: "Protocol",
-    baseUrl: "Base URL",
-    apiKey: "API Key",
-    model: "Model",
-    fetchModels: "Fetch",
-    testModel: "Test Model",
-    bodyLimit: "Body chars",
-    anthropicVersion: "Anthropic Version",
-    saveSettings: "Save Settings",
-    noRequests: "No requests yet. Start capture, then reload or use the page.",
-    noHooks: "No hook events yet.",
-    noStorage: "No storage snapshots yet.",
-    selected: "Selected",
-    copied: "Copied.",
-    saved: "Saved.",
-    imported: "Data imported.",
-    importFailed: "Import failed: {message}",
-    analyzing: "Analyzing...",
-    needAi: "Add an API key in Settings first.",
-    needData: "Capture some data first.",
-    needSelected: "Select a request first.",
-    modelLoaded: "Model list loaded.",
-    modelLoading: "Fetching model list...",
-    modelEmpty: "No models were returned.",
-    modelTesting: "Testing model...",
-    modelOk: "Model test passed.",
-    analysisSending: "Analyzing...\nEndpoint: {url}\nModel: {model}",
-    analysisComplete: "Analysis complete. Duration:",
-    elapsed: "Elapsed",
-    captureStarted: "Running",
-    capturePaused: "Paused",
-    captureStopped: "Stopped"
-  }
-};
+// i18n 使用全局 i18n.js 中的 t() / formatMessage()，无需内联定义
 
 const { prepareCapturedRequest, prepareSearchableEvent, stripDerivedFields, visibleRecentItems } = globalThis.captureUtils;
 const VISIBLE_REQUEST_LIMIT = 200;
@@ -170,7 +7,7 @@ const state = {
   tabId: null,
   targetTab: null,
   status: "stopped",
-  language: "zh-CN",
+  language: "en",
   requests: [],
   hooks: [],
   snapshots: [],
@@ -179,6 +16,7 @@ const state = {
   selectedRequestId: null,
   search: "",
   statusFilter: "",
+  typeFilter: "",
   settings: {
     provider: "openai",
     baseUrl: "api.openai.com",
@@ -198,6 +36,9 @@ let aiRequestTimer = null;
 const AI_ANALYSIS_TIMEOUT_MS = 10 * 60 * 1000;
 
 const $ = (id) => document.getElementById(id);
+// t() / formatMessage() / applyI18n() 由 i18n.js 在同一全局作用域中定义，直接调用即可。
+// 切勿在本文件再声明同名函数，否则会覆盖全局版本并导致无限递归（Maximum call stack size exceeded）。
+
 const el = {
   targetLabel: $("targetLabel"),
   languageSelect: $("languageSelect"),
@@ -219,6 +60,7 @@ const el = {
   statusText: $("statusText"),
   searchInput: $("searchInput"),
   statusFilter: $("statusFilter"),
+  typeFilter: $("typeFilter"),
   requestsList: $("requestsList"),
   hooksList: $("hooksList"),
   storageList: $("storageList"),
@@ -246,17 +88,9 @@ const el = {
   settingsStatus: $("settingsStatus")
 };
 
-function t(key) {
-  return i18n[state.language]?.[key] || i18n["zh-CN"][key] || key;
-}
-
-function formatMessage(template, values) {
-  return template.replace(/\{(\w+)\}/g, (_, key) => values[key] ?? "");
-}
-
 function formatAiRequestStatus(data) {
   if (globalThis.requestTimer?.formatAiRequestStatus) {
-    return globalThis.requestTimer.formatAiRequestStatus({ language: state.language, ...data });
+    return globalThis.requestTimer.formatAiRequestStatus(data);
   }
   const elapsedSeconds = Math.floor(Math.max(0, data.elapsedMs) / 1000);
   if (data.phase === "done") return `${t("analysisComplete")} ${elapsedSeconds}s`;
@@ -285,14 +119,9 @@ function stopAiRequestTimer(phase = "done") {
   return elapsedMs;
 }
 
-function applyI18n() {
-  document.documentElement.lang = state.language;
-  for (const node of document.querySelectorAll("[data-i18n]")) {
-    node.textContent = t(node.dataset.i18n);
-  }
-  for (const node of document.querySelectorAll("[data-i18n-placeholder]")) {
-    node.placeholder = t(node.dataset.i18nPlaceholder);
-  }
+// 注意：本函数不能命名为 applyI18n，否则会覆盖 i18n.js 的全局 applyI18n 并造成无限递归。
+function refreshI18n() {
+  applyI18n();
   el.languageSelect.value = state.language;
   if (!state.requests.length && !state.hooks.length) el.analysisOutput.textContent = t("analysisEmpty");
   scheduleRender();
@@ -457,6 +286,18 @@ function matchesFilter(item) {
   return (!state.search || (item.searchText || "").includes(state.search.toLowerCase())) && matchesStatus(item);
 }
 
+// 请求类型过滤（基于 Chrome DevTools resourceType）。仅用于请求列表，不影响 Hook/存储。
+function matchesType(item) {
+  const filter = state.typeFilter;
+  if (!filter) return true;
+  const type = item.type || "";
+  if (filter === "fetch-xhr") return type === "XHR" || type === "Fetch";
+  if (filter === "other") {
+    return !["Document", "Stylesheet", "Script", "Font", "Image", "Media", "Manifest", "WebSocket", "XHR", "Fetch"].includes(type);
+  }
+  return type === filter;
+}
+
 function scheduleRender() {
   if (renderScheduled) return;
   renderScheduled = true;
@@ -486,7 +327,7 @@ function render() {
 }
 
 function renderRequests() {
-  const items = visibleRecentItems(state.requests.filter(matchesFilter), VISIBLE_REQUEST_LIMIT);
+  const items = visibleRecentItems(state.requests.filter((item) => matchesFilter(item) && matchesType(item)), VISIBLE_REQUEST_LIMIT);
   el.requestsList.innerHTML = items.length ? items.map((item) => `
     <article class="item ${state.selectedRequestId === item.id ? "selected" : ""}" data-id="${escapeHtml(item.id)}">
       <div class="meta">
@@ -631,9 +472,12 @@ async function runCaptureControl(type, payload = {}, optimisticStatus = null) {
 async function loadSettings() {
   const message = await requestBackground("storage:get", { keys: ["aiSettings", "language"] });
   state.settings = { ...state.settings, ...(message.data.aiSettings || {}), provider: "openai" };
-  state.language = message.data.language || "zh-CN";
+  // 已保存过则用保存值；首次打开（无存储值）跟随浏览器语言，之后用户可自由切换
+  const storedLang = message.data.language || globalThis.detectNavigatorLocale();
+  globalThis.__i18nStore.setLang(storedLang, { persist: false });
+  state.language = globalThis.__i18nStore.lang;
   syncSettingsForm();
-  applyI18n();
+  refreshI18n();
 }
 
 function syncSettingsForm() {
@@ -975,9 +819,11 @@ function importCapturedData(data) {
   state.selectedRequestId = data.selectedRequestId || null;
   state.search = typeof data.search === "string" ? data.search : "";
   state.statusFilter = typeof data.statusFilter === "string" ? data.statusFilter : "";
+  state.typeFilter = "";
 
   el.searchInput.value = state.search;
   el.statusFilter.value = state.statusFilter;
+  el.typeFilter.value = state.typeFilter;
   el.analysisOutput.textContent = typeof data.analysisOutput === "string" ? data.analysisOutput : t("analysisEmpty");
   scheduleRender();
 }
@@ -1002,10 +848,11 @@ function switchView(viewName) {
 }
 
 function bindEvents() {
-  el.languageSelect.addEventListener("change", async () => {
+  el.languageSelect.addEventListener("change", () => {
     state.language = el.languageSelect.value;
-    await requestBackground("storage:set", { data: { language: state.language } });
-    applyI18n();
+    // setLang 内部已写入 chrome.storage.local，无需再通过 background 重复持久化
+    globalThis.__i18nStore.setLang(state.language);
+    refreshI18n();
   });
 
   el.startBtn.addEventListener("click", () => runCaptureControl("capture:start", { options: currentOptions() }, "running"));
@@ -1038,6 +885,10 @@ function bindEvents() {
     state.statusFilter = el.statusFilter.value;
     scheduleRender();
   });
+  el.typeFilter.addEventListener("change", () => {
+    state.typeFilter = el.typeFilter.value;
+    scheduleRender();
+  });
 
   for (const tab of document.querySelectorAll(".tab")) {
     tab.addEventListener("click", () => switchView(tab.dataset.view));
@@ -1049,9 +900,27 @@ function bindEvents() {
   });
 
   el.snapshotBtn.addEventListener("click", async () => {
-    const message = await requestBackground("cookies:get", { tabId: state.tabId });
-    state.snapshots.unshift(prepareSearchableEvent({ id: `s-${state.snapshots.length + 1}`, reason: "cookies-api", capturedAt: new Date().toISOString(), cookies: message.cookies }));
-    scheduleRender();
+    // tabId 可能为空（侧边栏未绑定标签页），此时由 background 回退到当前活动标签
+    el.snapshotBtn.disabled = true;
+    try {
+      const message = await requestBackground("cookies:get", { tabId: state.tabId });
+      state.snapshots.unshift(prepareSearchableEvent({
+        id: `s-${state.snapshots.length + 1}`,
+        reason: "cookies-api",
+        href: state.targetTab?.url || "",
+        capturedAt: new Date().toISOString(),
+        cookies: message.cookies || []
+      }));
+      switchView("storage");
+      scheduleRender();
+    } catch (error) {
+      el.analysisOutput.textContent = formatMessage(t("cookieSnapshotFailed"), {
+        message: error instanceof Error ? error.message : String(error)
+      });
+      switchView("ai");
+    } finally {
+      el.snapshotBtn.disabled = false;
+    }
   });
 
   el.saveSettingsBtn.addEventListener("click", saveSettings);
@@ -1102,7 +971,7 @@ function bindEvents() {
 async function init() {
   bindEvents();
   port.postMessage({ type: "sidepanel:init" });
-  await loadSettings().catch(() => applyI18n());
+  await loadSettings().catch(() => refreshI18n());
 }
 
 init();

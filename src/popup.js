@@ -6,6 +6,7 @@ const defaults = {
 };
 
 const el = {
+  languageSelect: document.getElementById("languageSelect"),
   baseUrlInput: document.getElementById("baseUrlInput"),
   apiKeyInput: document.getElementById("apiKeyInput"),
   modelInput: document.getElementById("modelInput"),
@@ -34,7 +35,7 @@ async function saveSettings() {
     }
   });
   el.baseUrlInput.value = baseUrl;
-  el.statusText.textContent = "Settings saved.";
+  el.statusText.textContent = t("settingsSaved");
   setTimeout(() => {
     el.statusText.textContent = "";
   }, 1600);
@@ -49,6 +50,19 @@ function normalizeBaseUrl(input) {
 }
 
 el.saveBtn.addEventListener("click", saveSettings);
-loadSettings().catch((error) => {
-  el.statusText.textContent = error instanceof Error ? error.message : String(error);
+el.languageSelect.addEventListener("change", () => {
+  globalThis.__i18nStore.setLang(el.languageSelect.value);
+  applyI18n();
+  el.languageSelect.value = globalThis.__i18nStore.lang;
 });
+
+async function init() {
+  await initI18n();
+  el.languageSelect.value = globalThis.__i18nStore.lang;
+  applyI18n();
+  await loadSettings().catch((error) => {
+    el.statusText.textContent = error instanceof Error ? error.message : String(error);
+  });
+}
+
+init();
