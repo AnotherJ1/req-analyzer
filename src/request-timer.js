@@ -11,14 +11,13 @@
     return minutes ? `${minutes} 分 ${seconds} 秒` : `${seconds} 秒`;
   }
 
-  function formatAiRequestStatus({ phase, elapsedMs, provider, url, model, language = "zh-CN" }) {
+  function formatAiRequestStatus({ phase, elapsedMs, url, model, language = "zh-CN" }) {
     const elapsed = formatElapsedSeconds(elapsedMs, language);
     if (isEnglish(language)) {
       if (phase === "done") return `Analysis complete. Duration: ${elapsed}`;
       return [
         "Analyzing...",
         `Elapsed: ${elapsed}`,
-        `Provider: ${provider}`,
         `Endpoint: ${url}`,
         `Model: ${model}`
       ].join("\n");
@@ -28,7 +27,6 @@
     return [
       "正在分析...",
       `已请求：${elapsed}`,
-      `协议：${provider}`,
       `接口：${url}`,
       `模型：${model}`
     ].join("\n");

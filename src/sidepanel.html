@@ -123,7 +123,6 @@
             <span data-i18n="provider">协议</span>
             <select id="providerSelect">
               <option value="openai">OpenAI Compatible</option>
-              <option value="anthropic">Claude Code / Anthropic Messages</option>
             </select>
           </label>
           <label>
@@ -148,10 +147,6 @@
           <label>
             <span data-i18n="bodyLimit">Body 字符数</span>
             <input id="bodyLimitInput" type="number" min="512" max="20000" step="512">
-          </label>
-          <label id="anthropicVersionWrap">
-            <span data-i18n="anthropicVersion">Anthropic Version</span>
-            <input id="anthropicVersionInput" placeholder="2023-06-01">
           </label>
           <button id="saveSettingsBtn" class="primary" data-i18n="saveSettings">保存设置</button>
           <p id="settingsStatus"></p>

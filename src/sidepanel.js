@@ -73,7 +73,7 @@ const i18n = {
     modelEmpty: "没有获取到模型。",
     modelTesting: "正在测试模型...",
     modelOk: "模型测试通过。",
-    analysisSending: "正在分析...\n协议：{provider}\n接口：{url}\n模型：{model}",
+    analysisSending: "正在分析...\n接口：{url}\n模型：{model}",
     analysisComplete: "分析完成，用时：",
     elapsed: "已请求",
     captureStarted: "运行中",
@@ -154,7 +154,7 @@ const i18n = {
     modelEmpty: "No models were returned.",
     modelTesting: "Testing model...",
     modelOk: "Model test passed.",
-    analysisSending: "Analyzing...\nProvider: {provider}\nEndpoint: {url}\nModel: {model}",
+    analysisSending: "Analyzing...\nEndpoint: {url}\nModel: {model}",
     analysisComplete: "Analysis complete. Duration:",
     elapsed: "Elapsed",
     captureStarted: "Running",
@@ -184,7 +184,7 @@ const state = {
     baseUrl: "api.openai.com",
     apiKey: "",
     model: "gpt-4.1-mini",
-    bodyLimit: 4096,
+    bodyLimit: 10000,
     anthropicVersion: "2023-06-01"
   }
 };
@@ -242,8 +242,6 @@ const el = {
   modelStatus: $("modelStatus"),
   testModelBtn: $("testModelBtn"),
   bodyLimitInput: $("bodyLimitInput"),
-  anthropicVersionWrap: $("anthropicVersionWrap"),
-  anthropicVersionInput: $("anthropicVersionInput"),
   saveSettingsBtn: $("saveSettingsBtn"),
   settingsStatus: $("settingsStatus")
 };
@@ -531,9 +529,7 @@ function renderStorage() {
   `).join("") : `<div class="empty">${t("noStorage")}</div>`;
 }
 
-function renderSettings() {
-  el.anthropicVersionWrap.style.display = state.settings.provider === "anthropic" ? "grid" : "none";
-}
+function renderSettings() {}
 
 function renderChat() {
   el.chatList.innerHTML = state.chat.map((message) => `
@@ -634,19 +630,18 @@ async function runCaptureControl(type, payload = {}, optimisticStatus = null) {
 
 async function loadSettings() {
   const message = await requestBackground("storage:get", { keys: ["aiSettings", "language"] });
-  state.settings = { ...state.settings, ...(message.data.aiSettings || {}) };
+  state.settings = { ...state.settings, ...(message.data.aiSettings || {}), provider: "openai" };
   state.language = message.data.language || "zh-CN";
   syncSettingsForm();
   applyI18n();
 }
 
 function syncSettingsForm() {
-  el.providerSelect.value = state.settings.provider;
+  el.providerSelect.value = "openai";
   el.baseUrlInput.value = state.settings.baseUrl;
   el.apiKeyInput.value = state.settings.apiKey;
   el.modelInput.value = state.settings.model;
   el.bodyLimitInput.value = state.settings.bodyLimit;
-  el.anthropicVersionInput.value = state.settings.anthropicVersion;
 }
 
 async function saveSettings() {
@@ -655,8 +650,8 @@ async function saveSettings() {
     baseUrl: normalizeBaseUrl(el.baseUrlInput.value, el.providerSelect.value),
     apiKey: el.apiKeyInput.value.trim(),
     model: el.modelInput.value.trim(),
-    bodyLimit: Number(el.bodyLimitInput.value) || 4096,
-    anthropicVersion: el.anthropicVersionInput.value.trim() || "2023-06-01"
+    bodyLimit: Number(el.bodyLimitInput.value) || 10000,
+    anthropicVersion: state.settings.anthropicVersion || "2023-06-01"
   };
   el.baseUrlInput.value = state.settings.baseUrl;
   await requestBackground("storage:set", { data: { aiSettings: state.settings, language: state.language } });
@@ -808,7 +803,6 @@ async function sendAiMessage(content, options = {}) {
   const baseUrl = normalizeBaseUrl(state.settings.baseUrl, state.settings.provider);
   const analysisUrl = state.settings.provider === "anthropic" ? `${baseUrl}/messages` : `${baseUrl}/chat/completions`;
   startAiRequestTimer({
-    provider: state.settings.provider,
     url: analysisUrl,
     model: state.settings.model
   });
@@ -1049,23 +1043,17 @@ function bindEvents() {
     tab.addEventListener("click", () => switchView(tab.dataset.view));
   }
 
+  el.providerSelect.addEventListener("change", () => {
+    state.settings.provider = "openai";
+    el.providerSelect.value = "openai";
+  });
+
   el.snapshotBtn.addEventListener("click", async () => {
     const message = await requestBackground("cookies:get", { tabId: state.tabId });
     state.snapshots.unshift(prepareSearchableEvent({ id: `s-${state.snapshots.length + 1}`, reason: "cookies-api", capturedAt: new Date().toISOString(), cookies: message.cookies }));
     scheduleRender();
   });
 
-  el.providerSelect.addEventListener("change", () => {
-    state.settings.provider = el.providerSelect.value;
-    const currentBase = el.baseUrlInput.value.trim();
-    if (state.settings.provider === "anthropic" && (!currentBase || currentBase.includes("openai.com"))) {
-      el.baseUrlInput.value = "api.anthropic.com";
-    }
-    if (state.settings.provider === "openai" && (!currentBase || currentBase.includes("anthropic.com"))) {
-      el.baseUrlInput.value = "api.openai.com";
-    }
-    renderSettings();
-  });
   el.saveSettingsBtn.addEventListener("click", saveSettings);
   el.fetchModelsBtn.addEventListener("click", () => fetchModelList().catch((error) => {
     setModelStatus(error instanceof Error ? error.message : String(error));
