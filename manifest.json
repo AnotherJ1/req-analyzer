@@ -13,7 +13,6 @@
   },
   "permissions": [
     "storage",
-    "scripting",
     "tabs",
     "cookies",
     "sidePanel",
