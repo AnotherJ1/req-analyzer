@@ -153,7 +153,18 @@ src/
   popup.js
 scripts/
   validate-extension.mjs # 本地清单和 JS 语法校验脚本
+  pack.mjs               # 打包上架 ZIP
+STORE_LISTING.md          # CWS 上架材料汇总
+PRIVACY.md                # 隐私政策
 ```
+
+## 打包
+
+```bash
+node scripts/pack.mjs
+```
+
+成功后会输出文件清单，ZIP 位于 `dist/req-analyzer-v0.1.0.zip`。
 
 ## 本地校验
 

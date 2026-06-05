@@ -104,13 +104,6 @@ inspected site to help developers debug authentication/session issues. HttpOnly
 cookie values are masked as [HttpOnly] and never exposed.
 ```
 
-### `scripting`
-```
-Injects the runtime hooks (fetch / XMLHttpRequest / crypto.subtle / document.cookie)
-into the inspected page so the developer can observe how their own site issues
-requests and uses these APIs.
-```
-
 ### `tabs`
 ```
 Used to identify the currently inspected tab (title/URL) so capture is scoped to
@@ -157,5 +150,9 @@ action.
 
 ## 8. 打包
 
-上架包已生成：`dist/req-analyzer-v0.1.0.zip`
-重新打包命令见 `scripts/`（或用项目的打包脚本）。
+```bash
+node scripts/pack.mjs           # 仅运行文件 → dist/req-analyzer-vX.X.X.zip
+node scripts/pack.mjs --store   # 额外附带商店素材 → dist/req-analyzer-vX.X.X-store.zip
+```
+
+上架 ZIP 位于 `dist/` 目录，可直接提交到 Chrome 网上应用店。

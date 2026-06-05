@@ -74,7 +74,20 @@ src/
   panel.html      # capture and analysis UI
   panel.css
   panel.js
+scripts/
+  validate-extension.mjs
+  pack.mjs
+STORE_LISTING.md
+PRIVACY.md
 ```
+
+## Packaging
+
+```bash
+node scripts/pack.mjs
+```
+
+On success the ZIP appears at `dist/req-analyzer-v0.1.0.zip`.
 
 ## Notes
 

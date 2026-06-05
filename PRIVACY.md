@@ -63,8 +63,8 @@ that endpoint.
   the site you are debugging.
 - `cookies` — required for the optional cookie snapshot feature.
 - `storage` — to persist your settings on your device.
-- `scripting`, `tabs`, `sidePanel` — to inject the analysis hooks and render the
-  side panel / DevTools panel for the inspected tab.
+- `tabs`, `sidePanel` — to identify the inspected tab and render the
+  side panel / DevTools panel.
 
 ## Data we do NOT do
 
